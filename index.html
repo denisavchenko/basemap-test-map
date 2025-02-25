@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaflet Map with PDF Export</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map { height: 1080px; }
+    #controls { margin: 10px 0; }
+    button {
+      margin: 5px;
+      padding: 10px 15px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <select id="mapStyle">
+      <option value="osm">OpenStreetMap</option>
+      <option value="custom">NEWS</option>
+    </select>
+    <button onclick="saveMapToPDF()">Сохранить карту в PDF</button>
+  </div>
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- html2canvas and jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    const map = L.map('map').setView([51.505, -0.09], 4);
+
+    const tileLayers = {
+      'osm': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }),
+      'custom': L.tileLayer('https://api.mapbox.com/styles/v1/maps-emg/cm7ksoq3j00te01r333se44cx/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwcy1lbWciLCJhIjoiY203a3JpNXFuMDN6eTJqczZwZTU0cXJiZyJ9.SQldh9xV4GA5Nx7WbLrJBg', {
+        attribution: '© Mapbox',
+        tileSize: 512,
+        zoomOffset: -1
+      })
+    };
+    https://api.mapbox.com/styles/v1/maps-emg/cm7ksoq3j00te01r333se44cx/wmts?access_token=pk.eyJ1IjoibWFwcy1lbWciLCJhIjoiY203a3JpNXFuMDN6eTJqczZwZTU0cXJiZyJ9.SQldh9xV4GA5Nx7WbLrJBg
+    tileLayers['osm'].addTo(map);
+
+    document.getElementById('mapStyle').addEventListener('change', function() {
+      const selectedStyle = this.value;
+      map.eachLayer(layer => {
+        if (layer instanceof L.TileLayer) {
+          map.removeLayer(layer);
+        }
+      });
+      tileLayers[selectedStyle].addTo(map);
+    });
+
+    function saveMapToPDF() {
+      html2canvas(document.getElementById("map"), { useCORS: true }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jspdf.jsPDF('landscape');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save("map.pdf");
+      }).catch(err => console.error("Ошибка при создании скриншота:", err));
+    }
+  </script>
+</body>
+</html>
